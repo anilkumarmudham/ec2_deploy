@@ -8,7 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -20,23 +19,22 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build Docker image
-        run: docker build -t myapp:latest .
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest .
 
       - name: Push Docker image
-        run: docker push myapp:latest
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest
 
   deploy:
     runs-on: self-hosted
     needs: build
-
     steps:
-      - name: Pull image
+      - name: Pull image on local machine
         run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest
 
       - name: Load image into kind
         run: kind load docker-image ${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest
 
-      - name: Apply Kubernetes configs
-        run: kubectl apply -f k8s/
-
-
+      - name: Apply K8s manifests
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
